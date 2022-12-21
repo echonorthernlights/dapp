@@ -16,8 +16,8 @@ const getEthereumContract = () => {
     signer
   );
 
-  console.log(provider, signer, transactionsContract);
-  //return transactionsContract;
+  //console.log(provider, signer, transactionsContract);
+  return transactionsContract;
 };
 
 export const TransactionsProvider = ({ children }) => {
@@ -29,8 +29,10 @@ export const TransactionsProvider = ({ children }) => {
     message: "",
   });
   // const [currentAccount, setCurrentAccount] = useState("");
-  // const [isLoading, setIsLoading] = useState(false);
-  // const [transactionCount, setTransactionCount] = useState(localStorage.getItem("transactionCount"));
+  const [isLoading, setIsLoading] = useState(false);
+  const [transactionCount, setTransactionCount] = useState(
+    localStorage.getItem("transactionCount")
+  );
   // const [transactions, setTransactions] = useState([]);
   const checkIfwalletIsConnected = async () => {
     try {
@@ -64,11 +66,41 @@ export const TransactionsProvider = ({ children }) => {
 
   // send transactions
   const sendTransaction = async () => {
-    console.log("from sendtransaction");
-    console.log(formData);
     try {
       if (!ethereum) return alert("Please install Metamask , and try again!");
       // get data from form
+      const { addressTo, amount, keyword, message } = formData;
+      const transactionContract = getEthereumContract();
+      console.log("contract", transactionContract);
+      const parsedAmount = ethers.utils.parseEther(amount);
+
+      await ethereum.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: currentAccount,
+            to: addressTo,
+            gas: "0x5208", //21000 GWEI
+            value: parsedAmount._hex,
+          },
+        ],
+      });
+
+      const transactionHash = await transactionContract.addToBlockchain(
+        addressTo,
+        parsedAmount,
+        message,
+        keyword
+      );
+
+      setIsLoading(true);
+      console.log(` Loading >>>> ${transactionHash.hash}`);
+      await transactionHash.wait();
+      setIsLoading(false);
+      console.log(` Success >>>> ${transactionHash.hash}`);
+
+      const transactionCount = await transactionContract.getTransactionCount();
+      setTransactionCount(transactionCount.toNumber());
     } catch (error) {
       console.log(error);
     }
