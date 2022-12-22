@@ -9,9 +9,9 @@ contract Transactions {
     struct TransferStruct {
         address sender;
         address receiver;
-        uint amout;
+        uint amount;
         string message;
-        uint256 timestmp;
+        uint256 timestamp;
         string keyword;
     }
     TransferStruct[] transactions;
